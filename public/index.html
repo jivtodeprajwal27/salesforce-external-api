@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AgentForce Dashboard</title>
+</head>
+<body>
+  <h1>Customer List</h1>
+  <ul id="customer-list"></ul>
+
+  <script>
+    fetch('/get-all-customers')
+      .then(response => response.json())
+      .then(data => {
+        const list = document.getElementById('customer-list');
+        data.forEach(customer => {
+          const item = document.createElement('li');
+          item.textContent = `${customer.name} - ${customer.email}`;
+          list.appendChild(item);
+        });
+      })
+      .catch(err => console.error('Error fetching customers:', err));
+  </script>
+</body>
+</html>
