@@ -12,12 +12,12 @@
   <script>
     async function loadCustomers() {
       try {
-        const response = await fetch('https://salesforce-external-api.vercel.app/api/customers');
+        const response = await fetch('/api/customers');
         const data = await response.json();
         const list = document.getElementById('customers');
         data.forEach(customer => {
           const li = document.createElement('li');
-          li.textContent = `${customer.name} (${customer.email}) - ${customer.location}`;
+          li.textContent = `${customer.name} (${customer.email})`;
           list.appendChild(li);
         });
       } catch (err) {
