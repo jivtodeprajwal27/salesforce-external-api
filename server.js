@@ -80,7 +80,7 @@ app.get('/api/customers', async (req, res) => {
     }
 
     // Fetch customers from MongoDB if Salesforce flag is not passed
-    const customers = await db.collection("customers").find().toArray();
+    const customers = await db.collection("customers_records").find().toArray();
     res.json(customers);
   } catch (err) {
     console.error(err);
