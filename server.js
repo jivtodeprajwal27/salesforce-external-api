@@ -2,12 +2,14 @@ const express = require('express');
 const { MongoClient } = require('mongodb');
 const axios = require('axios');
 const cors = require('cors');
+const bodyParser = require('body-parser'); // ✅ To parse JSON bodies
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 app.use(cors());
+app.use(bodyParser.json()); // ✅ Add body parsing middleware
 
 let db;
 
@@ -26,7 +28,7 @@ const connectDB = async () => {
 // Get Salesforce Access Token
 let accessToken = null;
 const getAccessToken = async () => {
-  if (accessToken) return accessToken; // cache reuse
+  if (accessToken) return accessToken;
 
   try {
     const res = await axios.post(process.env.SALESFORCE_TOKEN_URL, null, {
@@ -64,14 +66,33 @@ const fetchSalesforceCustomers = async () => {
   }
 };
 
-// API Endpoints
+// ✅ Add Customer to MongoDB
+app.post('/api/customers', async (req, res) => {
+  try {
+    const { name, email, phone } = req.body;
+
+    if (!name || !email || !phone) {
+      return res.status(400).json({ error: 'Name, email, and phone are required' });
+    }
+
+    const newCustomer = { name, email, phone };
+    await db.collection("customers_records").insertOne(newCustomer);
+
+    res.status(201).json({ message: '✅ Customer added successfully', customer: newCustomer });
+  } catch (err) {
+    console.error("❌ Failed to add customer:", err);
+    res.status(500).json({ error: 'Server error adding customer' });
+  }
+});
+
+// Test Route
 app.get('/', (req, res) => {
   res.send("🔥 API is Live!");
 });
 
-// Fetch Customers from MongoDB or Salesforce based on query
+// Fetch Customers from MongoDB or Salesforce
 app.get('/api/customers', async (req, res) => {
-  const useSalesforce = req.query.source === 'sf'; // Query parameter to use Salesforce data
+  const useSalesforce = req.query.source === 'sf';
 
   try {
     if (useSalesforce) {
@@ -79,7 +100,6 @@ app.get('/api/customers', async (req, res) => {
       return res.json(sfCustomers);
     }
 
-    // Fetch customers from MongoDB if Salesforce flag is not passed
     const customers = await db.collection("customers_records").find().toArray();
     res.json(customers);
   } catch (err) {
@@ -88,7 +108,7 @@ app.get('/api/customers', async (req, res) => {
   }
 });
 
-// MongoDB connection and server initialization
+// Start Server
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}`);
