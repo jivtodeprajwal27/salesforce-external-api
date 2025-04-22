@@ -1,61 +1,50 @@
-const express = require("express");
-const { MongoClient } = require("mongodb");
-const cors = require("cors");
-require("dotenv").config();
+const express = require('express');
+const cors = require('cors');
+const { MongoClient } = require('mongodb');
+require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+const uri = process.env.MONGO_URI;
 
-// Middleware
+const client = new MongoClient(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+
 app.use(cors());
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static('public'));
 
-// MongoDB Connection
-const uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017";
-const client = new MongoClient(uri);
-
-let customersCollection;
-
-async function connectToMongoDB() {
+// Connect to MongoDB
+async function connectDB() {
   try {
     await client.connect();
-    const db = client.db("agentforceDB");
-    customersCollection = db.collection("customers_records");
-    console.log("✅ Connected to MongoDB");
-  } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    console.log('✅ MongoDB Connected');
+  } catch (error) {
+    console.error('❌ MongoDB Connection Failed:', error);
   }
 }
 
-// Routes
+connectDB();
 
-// Test route
-app.get("/api/health", (req, res) => {
-  res.send("🚀 API is working!");
-});
-
-// Get all customer records
-app.get("/api/customers", async (req, res) => {
+// Route to get all customers
+app.get('/api/customers', async (req, res) => {
   try {
-    const customers = await customersCollection.find({}).toArray();
+    const collection = client.db('agentforceDB').collection('customers_records');
+    const customers = await collection.find().toArray();
     res.json(customers);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch customer records" });
+    console.error(err);
+    res.status(500).json({ message: 'Failed to fetch customer data' });
   }
 });
 
-// Add a new customer record
-app.post("/api/customers", async (req, res) => {
-  try {
-    const result = await customersCollection.insertOne(req.body);
-    res.json({ message: "Customer added", id: result.insertedId });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to add customer" });
-  }
+// Root route (optional)
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/public/index.html');
 });
 
-app.listen(port, async () => {
-  await connectToMongoDB();
-  console.log(`🌐 Server running at http://localhost:${port}`);
+app.listen(port, () => {
+  console.log(`🚀 Server running at http://localhost:${port}`);
 });

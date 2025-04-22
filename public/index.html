@@ -1,23 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>AgentForce Site</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AgentForce Customers</title>
 </head>
 <body>
-  <h1>Customer Records Portal</h1>
-  <div id="customer-list"></div>
+  <h1>Customer Records</h1>
+  <ul id="customers"></ul>
 
   <script>
-    fetch('/api/customers')
-      .then(res => res.json())
-      .then(data => {
-        const container = document.getElementById('customer-list');
+    async function loadCustomers() {
+      try {
+        const response = await fetch('/api/customers');
+        const data = await response.json();
+        const list = document.getElementById('customers');
         data.forEach(customer => {
-          const p = document.createElement('p');
-          p.textContent = JSON.stringify(customer);
-          container.appendChild(p);
+          const li = document.createElement('li');
+          li.textContent = `${customer.name} (${customer.email}) - ${customer.location}`;
+          list.appendChild(li);
         });
-      });
+      } catch (err) {
+        console.error('Error loading customer data:', err);
+      }
+    }
+
+    loadCustomers();
   </script>
 </body>
 </html>
