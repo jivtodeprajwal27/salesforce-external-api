@@ -1,50 +1,42 @@
 const express = require('express');
-const cors = require('cors');
 const { MongoClient } = require('mongodb');
+const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const port = process.env.PORT || 3000;
-const uri = process.env.MONGO_URI;
-
-const client = new MongoClient(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const PORT = process.env.PORT || 8080;
 
 app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
 
-// Connect to MongoDB
-async function connectDB() {
+let db;
+
+const connectDB = async () => {
   try {
+    const client = new MongoClient(process.env.MONGO_URI);
     await client.connect();
-    console.log('✅ MongoDB Connected');
-  } catch (error) {
-    console.error('❌ MongoDB Connection Failed:', error);
+    db = client.db("agentforceDB");
+    console.log("✅ MongoDB Connected");
+  } catch (err) {
+    console.error("❌ MongoDB Connection Failed:", err);
   }
-}
+};
 
-connectDB();
+app.get('/', (req, res) => {
+  res.send("🔥 API is Live!");
+});
 
-// Route to get all customers
 app.get('/api/customers', async (req, res) => {
   try {
-    const collection = client.db('agentforceDB').collection('customers_records');
-    const customers = await collection.find().toArray();
+    const customers = await db.collection("customers").find().toArray();
     res.json(customers);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to fetch customer data' });
+    res.status(500).send("❌ Failed to fetch customers");
   }
 });
 
-// Root route (optional)
-app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/public/index.html');
-});
-
-app.listen(port, () => {
-  console.log(`🚀 Server running at http://localhost:${port}`);
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  });
 });
