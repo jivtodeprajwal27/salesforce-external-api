@@ -14,7 +14,7 @@ const connectDB = async () => {
   try {
     const client = new MongoClient(process.env.MONGO_URI);
     await client.connect();
-    db = client.db("agentforceDB");
+    db = client.db("agentforcedb");
     console.log("✅ MongoDB Connected");
   } catch (err) {
     console.error("❌ MongoDB Connection Failed:", err);
