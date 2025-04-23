@@ -66,6 +66,40 @@ const fetchSalesforceCustomers = async () => {
   }
 };
 
+// ✅ Create Salesforce Contact
+const createSalesforceContact = async ({ name, email, phone }) => {
+  const token = await getAccessToken();
+
+  // Salesforce Contact object needs LastName (mandatory)
+  const [firstName, ...lastNameParts] = name.split(" ");
+  const lastName = lastNameParts.join(" ") || firstName;
+
+  try {
+    const response = await axios.post(
+      process.env.SALESFORCE_CONTACT_URL, // e.g. https://yourInstance.salesforce.com/services/data/v60.0/sobjects/Contact
+      {
+        FirstName: firstName,
+        LastName: lastName,
+        Email: email,
+        Phone: phone
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log("✅ Salesforce Contact Created:", response.data.id);
+    return response.data;
+  } catch (err) {
+    console.error("❌ Error creating Salesforce Contact:", err.response?.data || err.message);
+    throw new Error("Failed to create Salesforce Contact");
+  }
+};
+
+
 // ✅ Add Customer to MongoDB
 app.post('/api/customers', async (req, res) => {
   try {
@@ -77,8 +111,15 @@ app.post('/api/customers', async (req, res) => {
 
     const newCustomer = { name, email, phone };
     await db.collection("customers_records").insertOne(newCustomer);
+  
+    // 2. Sync to Salesforce Contact
+    const sfResponse = await createSalesforceContact(newCustomer);
 
-    res.status(201).json({ message: '✅ Customer added successfully', customer: newCustomer });
+    res.status(201).json({ 
+      message: '✅ Customer added successfully',
+      customer: newCustomer,
+      salesforceContactId: sfResponse.id 
+    });
   } catch (err) {
     console.error("❌ Failed to add customer:", err);
     res.status(500).json({ error: 'Server error adding customer' });
