@@ -115,11 +115,8 @@ app.post('/api/customers', async (req, res) => {
     // 2. Sync to Salesforce Contact
     const sfResponse = await createSalesforceContact(newCustomer);
 
-    res.status(201).json({ 
-      message: '✅ Customer added successfully',
-      customer: newCustomer,
-      salesforceContactId: sfResponse.id 
-    });
+    res.status(201).json({ message: '✅ Customer added successfully',
+       customer: newCustomer });
   } catch (err) {
     console.error("❌ Failed to add customer:", err);
     res.status(500).json({ error: 'Server error adding customer' });
